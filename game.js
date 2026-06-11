@@ -4,12 +4,12 @@ let K=new Set,ms={x:0,y:0,d:0},P=null,G={run:0,pause:0,over:0,t:0,seed:0,rng:nul
 const DEFAULT_BINDINGS={up:'KeyW',down:'KeyS',left:'KeyA',right:'KeyD',dash:'Space',shock:'KeyQ',repair:'KeyC',lightning:'KeyZ',interact:'KeyE',pause:'KeyP',codex:'KeyI',save:'F5',load:'F9',weapon1:'Digit1',weapon2:'Digit2',weapon3:'Digit3'};
 const BIND_LABELS={up:'Move up',down:'Move down',left:'Move left',right:'Move right',dash:'Dash',shock:'Shockwave',repair:'Repair',lightning:'Chain lightning',interact:'Interact',pause:'Pause',codex:'Codex',save:'Quick save',load:'Quick load',weapon1:'Weapon 1',weapon2:'Weapon 2',weapon3:'Weapon 3'};
 let settings={sens:1,binds:{...DEFAULT_BINDINGS}},rebinding=null;
-try{let saved=JSON.parse(localStorage.ATTACK_COOPERS_SETTINGS||'{}');settings.sens=Number(saved.sens)||1;settings.binds={...DEFAULT_BINDINGS,...(saved.binds||{})}}catch(e){}
+try{let saved=JSON.parse(localStorage.ATTACK_COOPERS_SETTINGS||'{}');settings.sens=Number(saved.sens)||1;settings.binds={...DEFAULT_BINDINGS,...(saved.binds||{})}}catch(e){console.warn('Failed to load settings, using defaults:',e)}
 
 function openPause(){if(!P||!G.run)return;G.pause=1;renderSettings();$('pausePanel').style.display='flex'}
 function closePause(){G.pause=0;$('pausePanel').style.display='none'}
 
-function saveSettings(){localStorage.ATTACK_COOPERS_SETTINGS=JSON.stringify(settings)}
+function saveSettings(){try{localStorage.ATTACK_COOPERS_SETTINGS=JSON.stringify(settings)}catch(e){console.warn('Failed to save settings:',e);toast('Could not save settings')}}
 function keyLabel(code){return code.replace('Key','').replace('Digit','').replace('Arrow','Arrow ').replace('Space','Spacebar')}
 function isDown(action){return K.has(settings.binds[action])}
 function angleDelta(a,b){return Math.atan2(Math.sin(b-a),Math.cos(b-a))}
@@ -31,8 +31,8 @@ onkeydown=e=>{let typing=e.target&&['INPUT','TEXTAREA'].includes(e.target.tagNam
 let puzzle=null,craftedGun=null;
 let runStats={damage:0,shots:0,rooms:0,startTime:0,fav:{},bestWeapon:'Pulse'};
 let meta={wins:0,hardWins:0,epsteinWins:0,unlocks:[]};
-try{meta={...meta,...JSON.parse(localStorage.ATTACK_COOPERS_META||'{}')}}catch(e){}
-function saveMeta(){localStorage.ATTACK_COOPERS_META=JSON.stringify(meta)}
+try{meta={...meta,...JSON.parse(localStorage.ATTACK_COOPERS_META||'{}')}}catch(e){console.warn('Failed to load meta progress, using defaults:',e)}
+function saveMeta(){try{localStorage.ATTACK_COOPERS_META=JSON.stringify(meta)}catch(e){console.warn('Failed to save meta:',e)}}
 function recordShot(w){runStats.shots++;runStats.fav[w[0]]=(runStats.fav[w[0]]||0)+1;runStats.bestWeapon=Object.entries(runStats.fav).sort((a,b)=>b[1]-a[1])[0]?.[0]||w[0]}
 function rarityForGun(g){if(g[9]=='bad')return 'cursed';let dmg=g[3],shots=g[6],pierce=g[7],rate=g[1];let score=dmg+shots*3+pierce*8+(rate<.08?14:0);return score>95?'legendary':score>55?'epic':score>25?'rare':'common'}
 function rarityClass(r){return 'rarity-'+String(r).toLowerCase()}
@@ -145,7 +145,7 @@ function drawScanlines(){X.save();X.globalAlpha=.035;X.fillStyle='#dff7ff';for(l
 const CHARACTERS=[{id:'char0',name:'Sheldon Cooper',role:'Precision Controller',summary:'Stronger shockwave, higher crit chance, and a calmer reactor for accurate play.',focus:'Shockwave focus',passive:'Pulse Etiquette: crit-focused controller with extended shockwave reach.',img:'images/sheldon-cooper.png',apply:p=>{p.qc*=0.82;p.qr+=55;p.cr+=0.08;p.cm+=0.25;p.er+=1;}},{id:'char1',name:'Georgie Cooper',role:'Skirmisher',summary:'Faster movement, stronger damage, and shorter dash cooldowns for aggressive play.',focus:'Mobility & overdrive',passive:'Kinetic Surge: gains extra speed and dash efficiency.',img:'images/georgie-cooper.png',apply:p=>{p.sp*=1.14;p.dcMax*=0.78;p.dm*=1.12;p.heat=18;}},{id:'char2',name:'Missy Cooper',role:'Tech Specialist',summary:'Larger energy pool plus boosted chain lightning and sentry tools.',focus:'Energy tech',passive:'Arc Buddy: enhanced energy economy and deployables.',img:'images/missy-cooper.png',apply:p=>{p.me+=24;p.e=p.me;p.er+=3;p.chainPow+=0.55;p.sentryPow+=0.45;}},{id:'char3',name:'Mary Cooper',role:'Support',summary:'Improved repair pulse, passive regeneration, and one extra mercy revive.',focus:'Healing support',passive:'Restoration Field: starts with passive regen and stronger repair pulse.',img:'images/mary-cooper.png',apply:p=>{p.mh+=8;p.h=p.mh;p.ms+=6;p.s=p.ms;p.repairPow+=0.6;p.passive+=0.45;p.mercy+=1;}},{id:'char4',name:'Meemaw',role:'Tank',summary:'Extra hull, armor, and stronger barriers and mines for area control.',focus:'Defense & area control',passive:'Fortress Protocol: tougher frame with stronger barriers and mine damage.',img:'images/meemaw.png',apply:p=>{p.mh+=22;p.h=p.mh;p.ms+=8;p.s=p.ms;p.armor+=2;p.barrierPow+=0.6;p.minePow+=0.45;}},{id:'char5',name:'George Cooper',role:'Frontline Veteran',summary:'A durable all-rounder with extra hull, sturdier armor, and faster shield recovery for steady runs.',focus:'Survivability & steady pressure',passive:'Steady Presence: starts tougher, regenerates shields faster, and gets a small damage boost.',img:'images/george-cooper.png',apply:p=>{p.mh+=14;p.h=p.mh;p.ms+=5;p.s=p.ms;p.armor+=1;p.sr+=2;p.dm*=1.05;}}];
 let selectedCharacter=Math.max(0,Math.min(CHARACTERS.length-1,parseInt(localStorage.NEON_RELIC_SELECTED_CHAR||'0',10)||0));
 const FACE_CROPS=[[.22,.02,.56,.66],[.29,.03,.42,.48],[.15,.02,.70,.62],[.12,.03,.76,.63],[.31,.04,.40,.54],[.12,.02,.76,.56]];
-const PLAYER_IMG=new Image();PLAYER_IMG.decoding='async';
+const PLAYER_IMG=new Image();PLAYER_IMG.decoding='async';PLAYER_IMG.onerror=function(){console.warn('Failed to load player image:',this.src)};
 function characterAt(i){return CHARACTERS[Math.max(0,Math.min(CHARACTERS.length-1,i|0))]||CHARACTERS[0]}
 function stampCharacterFields(p,idx=selectedCharacter){let c=characterAt(idx);p.charId=Math.max(0,Math.min(CHARACTERS.length-1,idx|0));p.charName=c.name;p.charRole=c.role;p.charSummary=c.summary;p.charFocus=c.focus;p.charPassive=c.passive;return p}
 function applyCharacter(p,idx=selectedCharacter){let c=characterAt(idx);stampCharacterFields(p,idx);c.apply(p);p.h=cl(p.h,0,p.mh);p.s=cl(p.s,0,p.ms);p.e=cl(p.e,0,p.me);return p}
@@ -156,11 +156,11 @@ renderCharacterSelect();
 
 const VIEW_SCALE=1.24;
 let selectedDifficulty=(localStorage.NEON_RELIC_DIFFICULTY||'medium');
-const EPSTEIN_IMG=new Image();EPSTEIN_IMG.decoding='async';EPSTEIN_IMG.src="images/ich-bin-ein-heidelberger.png";
+const EPSTEIN_IMG=new Image();EPSTEIN_IMG.decoding='async';EPSTEIN_IMG.onerror=function(){console.warn('Failed to load image:',this.src)};EPSTEIN_IMG.src="images/ich-bin-ein-heidelberger.png";
 const EPSTEIN_CROP=[.18,.05,.64,.72];
-const ALT_ENEMY_IMG=new Image();ALT_ENEMY_IMG.decoding='async';ALT_ENEMY_IMG.src='images/alt-enemy.png';
+const ALT_ENEMY_IMG=new Image();ALT_ENEMY_IMG.decoding='async';ALT_ENEMY_IMG.onerror=function(){console.warn('Failed to load image:',this.src)};ALT_ENEMY_IMG.src='images/alt-enemy.png';
 const ALT_ENEMY_CROP=[0.245,0.03,0.515,0.84];
-const MINIBOSS_IMG=new Image();MINIBOSS_IMG.decoding='async';MINIBOSS_IMG.src='images/miniboss-face.png';
+const MINIBOSS_IMG=new Image();MINIBOSS_IMG.decoding='async';MINIBOSS_IMG.onerror=function(){console.warn('Failed to load image:',this.src)};MINIBOSS_IMG.src='images/miniboss-face.png';
 const MINIBOSS_CROP=[0.215,0.03,0.57,0.62];
 
 const DIFFICULTIES={
@@ -174,7 +174,7 @@ function diff(){return difficultyAt(selectedDifficulty)}
 function dungeonLevel(){
   if(!G||!G.run)return 1;
   let clears=0;
-  try{for(let r of G.rooms.values())if(r.clr)clears++}catch(e){}
+  try{for(let r of G.rooms.values())if(r.clr)clears++}catch(e){console.warn('Error counting cleared rooms:',e)}
   let bossBonus=(G.bossKills||0)*2;
   return Math.max(1,Math.min(12,1+Math.floor((clears+bossBonus)/5)));
 }
@@ -218,7 +218,7 @@ function applyDifficultyToPlayer(p){
 }
 renderDifficultySelect();
 
-const BRISKET_IMG=new Image();BRISKET_IMG.src='images/brisket.png';
+const BRISKET_IMG=new Image();BRISKET_IMG.onerror=function(){console.warn('Failed to load image:',this.src)};BRISKET_IMG.src='images/brisket.png';
 function metalPanel(x,y,w,h,lit=0){let g=X.createLinearGradient(x,y,x+w,y+h);g.addColorStop(0,'#16232e');g.addColorStop(.46,'#0c141c');g.addColorStop(1,'#05090e');X.fillStyle=g;rr(x,y,w,h,10);X.fill();X.strokeStyle=lit?'rgba(111,240,255,.18)':'rgba(255,255,255,.045)';X.lineWidth=1;rr(x,y,w,h,10);X.stroke();X.fillStyle='rgba(255,255,255,.025)';X.fillRect(x+7,y+7,w-14,2);X.fillStyle='rgba(0,0,0,.12)';X.fillRect(x+7,y+h-10,w-14,2);if((x+y)%168===0){X.fillStyle='rgba(98,227,255,.03)';X.fillRect(x+w-16,y+8,4,h-16)}}
 
 const UP=[['HP','Reinforced Hull','+35 max hull and repair.',p=>{p.mh+=35;p.h=cl(p.h+60,0,p.mh)}],['SHD','Aegis Loop','+25 shield and regen.',p=>{p.ms+=25;p.sr+=2;p.s=p.ms}],['DMG','Overclock','+20% damage.',p=>p.dm*=1.2],['SPD','Phase Legs','Faster movement and dash.',p=>{p.sp*=1.12;p.dcMax*=.85}],['DRN','Combat Drone','Adds a drone.',p=>G.drones++],['CRT','Crit Oracle','Better critical hits.',p=>{p.cr+=.08;p.cm+=.35}],['MAG','Magnet Array','Bigger pickup range.',p=>p.mag+=80],['ENG','Reactor Blood','Kills refund energy.',p=>p.ref+=3],['SPL','Splinter Rounds','Enemies burst into bullets.',p=>p.spl++],['STM','Storm Heart','Better shockwave.',p=>{p.qc*=.75;p.qr+=55}],['MED','Field Medic','Better repair pulse.',p=>p.repairPow+=.4],['ENG','Storm Conductor','Better chain lightning.',p=>p.chainPow+=.5],['GUN','Gun Mastery','Shots deal +12% damage and cost slightly less energy.',p=>{p.dm*=1.12;p.er+=1.2}],['ARM','Shield Plating','Gain +18 shield, +1 armor, and faster shield recharge.',p=>{p.ms+=18;p.sr+=1.6;p.armor+=1;p.s=p.ms}],['REG','Living Alloy','Passive hull regen.',p=>p.passive+=1.1],['REV','Mercy Protocol','One extra revive.',p=>p.mercy++],['BAT','Energy Reservoir','Gain +22 max energy and faster energy recharge.',p=>{p.me+=22;p.er+=2.4;p.e=p.me}],['BRK','Brisket Rounds','Bullets hit harder and critical chance increases.',p=>{p.dm*=1.08;p.cr+=.06}],['RUN','Dungeon Runner','Move faster and gain a shorter dash cooldown.',p=>{p.sp*=1.08;p.dcMax*=.9}],['TAC','Tactical Study','Level up faster and improve repair power.',p=>{p.nx=Math.max(40,p.nx*.88|0);p.repairPow+=.18}],['SCR','Scrap Synth','More scrap drops.',p=>p.scrapMul*=1.35]];
@@ -1191,7 +1191,7 @@ function sfx(kind){
     o.type=m[3];o.frequency.setValueAtTime(m[0],now);o.frequency.exponentialRampToValueAtTime(Math.max(40,m[0]*.55),now+m[1]);
     g.gain.setValueAtTime(m[2],now);g.gain.exponentialRampToValueAtTime(.0001,now+m[1]);
     o.connect(g);g.connect(a.destination);o.start(now);o.stop(now+m[1]);
-  }catch(e){}
+  }catch(e){console.warn('SFX playback error:',e)}
 }
 
 let music=null;
@@ -1205,20 +1205,31 @@ function startMusic(){
     lfo.type='sine';lfo.frequency.value=.08;lg.gain.value=11;lfo.connect(lg);lg.connect(o.frequency);
     g.gain.value=.018;o.connect(g);g.connect(a.destination);o.start();lfo.start();
     music={o,g,lfo,lg};
-  }catch(e){}
+  }catch(e){console.warn('Failed to start music:',e)}
 }
-function stopMusic(){try{if(music){music.o.stop();music.lfo.stop();music=null}}catch(e){music=null}}
+function stopMusic(){try{if(music){music.o.stop();music.lfo.stop();music=null}}catch(e){console.warn('Error stopping music:',e);music=null}}
 function toggleAudio(){muted=!muted;if(muted){stopMusic();$('audioToggle').textContent='Audio: Off'}else{$('audioToggle').textContent='Audio: On';startMusic();sfx('buy')}}
 function save(){
   if(!P||!G.run){toast('Nothing to save');return false}
   if(G.cur)G.cur.loot=[...G.lt];
-  localStorage.NEON_RELIC_FIXED=JSON.stringify({version:5,seed:G.seed,t:G.t,rx:G.rx,ry:G.ry,difficulty:selectedDifficulty,P:{...P,seen:[...P.seen]},weps:weps.map(w=>w.slice()),keys:G.keys,core:G.core,bossKills:G.bossKills||0,bossTotal:G.bossTotal||BOSS_ROOM_COUNT,miniBossTotal:G.miniBossTotal||MINI_BOSS_ROOM_COUNT,dungeonLevel:dungeonLevel(),kills:G.kills,drones:G.drones,rooms:[...G.rooms],en:G.en,lt:G.lt,mines:G.mines,sentries:G.sentries,decoys:G.decoys,barriers:G.barriers,art:G.art,rift:G.rift,combo:G.combo,comboT:G.comboT});
+  try{
+    localStorage.NEON_RELIC_FIXED=JSON.stringify({version:5,seed:G.seed,t:G.t,rx:G.rx,ry:G.ry,difficulty:selectedDifficulty,P:{...P,seen:[...P.seen]},weps:weps.map(w=>w.slice()),keys:G.keys,core:G.core,bossKills:G.bossKills||0,bossTotal:G.bossTotal||BOSS_ROOM_COUNT,miniBossTotal:G.miniBossTotal||MINI_BOSS_ROOM_COUNT,dungeonLevel:dungeonLevel(),kills:G.kills,drones:G.drones,rooms:[...G.rooms],en:G.en,lt:G.lt,mines:G.mines,sentries:G.sentries,decoys:G.decoys,barriers:G.barriers,art:G.art,rift:G.rift,combo:G.combo,comboT:G.comboT});
+  }catch(e){
+    console.warn('Save failed:',e);
+    toast('Save failed – storage may be full');
+    return false
+  }
   toast('Saved');
   return true
 }
 function load(){
-  let d=localStorage.NEON_RELIC_FIXED;if(!d)return toast('No save found');
-  d=JSON.parse(d);
+  let raw=localStorage.NEON_RELIC_FIXED;if(!raw)return toast('No save found');
+  let d;
+  try{d=JSON.parse(raw)}catch(e){
+    console.warn('Corrupted save data:',e);
+    toast('Save data corrupted – cannot load');
+    return
+  }
   if(!d.version||d.version<5)return toast('Old save incompatible. Start a new run.');
   setDifficulty(d.difficulty||selectedDifficulty);
   world(d.seed);
