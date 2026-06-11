@@ -1,0 +1,15 @@
+{
+  "name": "attack-on-the-coopers",
+  "version": "1.0.0",
+  "description": "https://applepen123455.github.io/Attack-on-the-Coopers/",
+  "main": "game.js",
+  "scripts": {
+    "test": "jest --verbose"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^30.4.2"
+  }
+}
